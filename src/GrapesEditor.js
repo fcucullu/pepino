@@ -75,6 +75,62 @@ const GrapesEditor = () => {
 
       editorRef.current = editor;
 
+      // Agregar un bloque de imagen
+      editor.BlockManager.add("image-block", {
+        label: "Imagen",
+        category: "Multimedia",
+        content: {
+          type: "image",
+          src: "https://via.placeholder.com/150",
+          style: { width: "100%" },
+        },
+      });
+
+      // Agregar un bloque de espaciador
+      editor.BlockManager.add("spacer-block", {
+        label: "Espaciador",
+        category: "Diseño",
+        content: {
+          tagName: "div",
+          style: { height: "30px", width: "100%", background: "transparent" },
+        },
+      });
+
+      // Agregar un bloque de columnas personalizables
+      editor.BlockManager.add("columns-block", {
+        label: "Columnas",
+        category: "Diseño",
+        content: {
+          tagName: "div",
+          components: [
+            {
+              tagName: "div",
+              style: { display: "flex", gap: "10px" },
+              components: [
+                {
+                  tagName: "div",
+                  style: {
+                    flex: "1",
+                    padding: "10px",
+                    border: "1px solid #ddd",
+                  },
+                  content: "Columna 1",
+                },
+                {
+                  tagName: "div",
+                  style: {
+                    flex: "1",
+                    padding: "10px",
+                    border: "1px solid #ddd",
+                  },
+                  content: "Columna 2",
+                },
+              ],
+            },
+          ],
+        },
+      });
+
       // Cargar diseño guardado al iniciar
       const savedData = localStorage.getItem("grapesjs-design");
       if (savedData) {
@@ -83,21 +139,42 @@ const GrapesEditor = () => {
     }
   }, []);
 
-  // Función para guardar diseño en localStorage
-  const handleSave = () => {
+  // Función para guardar diseño en la base de datos
+  const handleSave = async () => {
     if (editorRef.current) {
+      const projectId = "test-design";
       const projectData = editorRef.current.getProjectData();
-      localStorage.setItem("grapesjs-design", JSON.stringify(projectData));
-      alert("Diseño guardado!");
+
+      const response = await fetch("http://localhost:5001/save-design", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId, data: projectData }),
+      });
+
+      if (response.ok) {
+        alert("Diseño guardado en la base de datos!");
+      } else {
+        alert("Error al guardar el diseño");
+      }
     }
   };
 
-  // Función para cargar diseño desde localStorage
-  const handleLoad = () => {
-    const savedData = localStorage.getItem("grapesjs-design");
-    if (savedData && editorRef.current) {
-      editorRef.current.loadProjectData(JSON.parse(savedData));
-      alert("Diseño cargado!");
+  // Función para cargar diseño desde la base de datos
+  const handleLoad = async () => {
+    const projectId = "test-design";
+
+    const response = await fetch(
+      `http://localhost:5001/load-design/${projectId}`
+    );
+
+    if (response.ok) {
+      const projectData = await response.json();
+      if (editorRef.current) {
+        editorRef.current.loadProjectData(projectData);
+        alert("Diseño cargado desde la base de datos!");
+      }
+    } else {
+      alert("No se encontró el diseño en la base de datos");
     }
   };
 
